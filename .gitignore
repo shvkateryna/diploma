@@ -1,0 +1,11 @@
+.venv
+data
+penguin_env
+results
+runs
+rf-detr-medium.pth
+rf-detr-nano.pth
+rtdetr-l.pt
+rtdetr-x.pt
+yolo11n.pt
+yolo26n.pt

@@ -1,0 +1,7 @@
+
+path: data
+train: yalur_green/images
+val: images/val
+
+nc: 1
+names: ['penguin']

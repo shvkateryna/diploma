@@ -1,0 +1,13 @@
+path: /home/skateryna/diploma_v3
+
+train:
+  - data/cut_yalur_green_v2/images
+  - data/cut_uk_dataset/images/train
+  - data/cut_unlabeled_dataset/images
+
+val:
+  - data/cut_moot_100m/images
+  - data/cut_uk_dataset/images/val
+
+nc: 1
+names: ['penguin']

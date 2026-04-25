@@ -1,0 +1,7 @@
+
+path: data
+train: cut_yalur_green/images
+val: cut_moot_100m/images
+
+nc: 1
+names: ['penguin']

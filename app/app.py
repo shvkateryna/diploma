@@ -141,14 +141,14 @@ if uploaded:
             progress.progress(100, text="Done!")
 
             st.session_state.results = {
-                "metrics": compute_metrics(boxes, scores),
                 "original": original_display,
-                "result_rgb": result_display,
                 "boxes": boxes,
                 "scores": scores,
+                "scale": scale,
                 "image_shape": (h, w),
                 "image_name": uploaded.name,
                 "elapsed_sec": elapsed_sec,
+                "inference_conf": conf,
             }
 
         except FileNotFoundError as e:
@@ -166,8 +166,28 @@ if uploaded:
 # Results
 if st.session_state.results:
     r = st.session_state.results
-    m = r["metrics"]
+
+    # Re-filter stored detections by current slider value so the slider
+    # works interactively without re-running inference.
+    if conf < r["inference_conf"]:
+        st.info(
+            f"Confidence {conf:.0%} is below the inference threshold "
+            f"{r['inference_conf']:.0%}. Re-run detection to see more results."
+        )
+
+    filtered = [(b, s) for b, s in zip(r["boxes"], r["scores"]) if s >= conf]
+    f_boxes = [b for b, _ in filtered]
+    f_scores = [s for _, s in filtered]
+
+    m = compute_metrics(f_boxes, f_scores)
     total = m["total"]
+
+    scale = r["scale"]
+    display_boxes = [
+        (int(x1 * scale), int(y1 * scale), int(x2 * scale), int(y2 * scale))
+        for x1, y1, x2, y2 in f_boxes
+    ]
+    result_display = draw_boxes(r["original"], display_boxes, f_scores)
 
     st.divider()
 
@@ -202,7 +222,7 @@ if st.session_state.results:
     with img_col1:
         st.image(r["original"], caption="Original image", use_container_width=True)
     with img_col2:
-        st.image(r["result_rgb"], caption="Detected penguins", use_container_width=True)
+        st.image(result_display, caption="Detected penguins", use_container_width=True)
 
     st.divider()
 
@@ -213,7 +233,7 @@ if st.session_state.results:
     with dl1:
         st.download_button(
             "⬇️ RoiSet.zip — ImageJ",
-            to_roi_zip(r["boxes"]),
+            to_roi_zip(f_boxes),
             "RoiSet.zip",
             mime="application/zip",
             use_container_width=True,
@@ -222,7 +242,7 @@ if st.session_state.results:
     with dl2:
         st.download_button(
             "⬇️ Image (PNG)",
-            to_bytes(r["result_rgb"]),
+            to_bytes(result_display),
             "penguin_detection.png",
             mime="image/png",
             use_container_width=True,
@@ -231,7 +251,7 @@ if st.session_state.results:
         img_h, img_w = r["image_shape"]
         st.download_button(
             "⬇️ Label Studio JSON",
-            to_label_studio_json(r["boxes"], r["scores"], img_w, img_h, r["image_name"]),
+            to_label_studio_json(f_boxes, f_scores, img_w, img_h, r["image_name"]),
             "penguin_detections.json",
             mime="application/json",
             use_container_width=True,

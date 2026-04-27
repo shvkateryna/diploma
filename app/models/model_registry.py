@@ -43,8 +43,10 @@ class YOLOModel:
 
 class RFDETRModel:
     def __init__(self, weights_path: str):
+        import torch
         from rfdetr import RFDETRMedium
-        self.model = RFDETRMedium(pretrain_weights=weights_path)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = RFDETRMedium(pretrain_weights=weights_path, device=device)
 
     def predict_tile(
         self, tile_rgb: np.ndarray, conf: float

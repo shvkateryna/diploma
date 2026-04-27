@@ -16,26 +16,25 @@ RUN pip install --no-cache-dir \
     --index-url https://download.pytorch.org/whl/cpu
 
 RUN pip install --no-cache-dir \
-    ultralytics --no-deps
-
-RUN pip install --no-cache-dir \
-    sahi --no-deps
-
-RUN pip install --no-cache-dir \
+    ultralytics \
+    sahi \
     tqdm \
     pyyaml \
     shapely \
-    pycocotools
+    pycocotools \
+    rasterio \
+    opencv-python-headless \
+    pillow \
+    "numpy<2.0"
 
-RUN pip install --no-cache-dir rasterio
-
-RUN pip install --no-cache-dir rfdetr
+RUN pip install --no-cache-dir \
+    rfdetr==1.6.5 \
+    transformers>=5.0.0
 
 RUN pip install --no-cache-dir \
     "streamlit==1.40.0" \
     opencv-python-headless \
-    pillow \
-    "numpy<2.0"
+    pillow
 
 COPY . .
 

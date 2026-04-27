@@ -1,6 +1,6 @@
 # Developing a Computer Vision System for Penguin Counting at the Vernadsky Research Base
 
-Bachelor thesis project — Ukrainian Catholic University, 2025
+Bachelor thesis project — Ukrainian Catholic University, 2026
 
 **Author:** Kateryna Shvahuliak  
 **Supervisors:** Ph.D. Taras Firman, Svitozar Davydenko  

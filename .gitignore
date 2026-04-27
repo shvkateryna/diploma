@@ -9,3 +9,5 @@ rtdetr-l.pt
 rtdetr-x.pt
 yolo11n.pt
 yolo26n.pt
+app/models/rfdetr.pth
+app/models/yolo_aug.pt

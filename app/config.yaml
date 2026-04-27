@@ -1,0 +1,15 @@
+pipeline:
+  tile_size: 1024
+  overlap: 0.2
+  iou_threshold: 0.5
+  batch_size: 4
+
+models:
+  yolo_augmentation:
+    path: models/yolo_aug.pt
+    type: ultralytics
+    label: "YOLOv11 — Augmented"
+  rfdetr_baseline:
+    path: models/rfdetr.pth
+    type: rfdetr
+    label: "RF-DETR — Baseline"

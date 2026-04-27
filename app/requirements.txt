@@ -1,0 +1,9 @@
+streamlit
+ultralytics
+rfdetr
+pyyaml
+rasterio
+
+opencv-python-headless
+pillow
+numpy<2.0

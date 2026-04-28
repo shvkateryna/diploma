@@ -128,6 +128,21 @@ def apply_custom_styles():
             border-right: 1px solid rgba(0, 150, 199, 0.12) !important;
         }
 
+        /* ── Primary button ── */
+        .stButton > button[kind="primary"] {
+            background: #0096c7 !important;
+            border-color: #0096c7 !important;
+            color: #ffffff !important;
+        }
+        .stButton > button[kind="primary"]:hover {
+            background: #007aab !important;
+            border-color: #007aab !important;
+        }
+        .stButton > button[kind="primary"]:active {
+            background: #005f8a !important;
+            border-color: #005f8a !important;
+        }
+
         /* ── Divider ── */
         hr {
             border: none !important;

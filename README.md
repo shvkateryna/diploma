@@ -27,8 +27,7 @@ The two best-performing models — `YOLO_augmentation` (most accurate counting) 
 
 ## Demo
 
-<!-- VIDEO DEMO PLACEHOLDER — replace this section with the actual video when ready -->
-> **Demo video coming soon.**
+<video src="demo.mp4" autoplay loop muted playsinline width="100%"></video>
 
 ---
 

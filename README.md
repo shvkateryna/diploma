@@ -16,10 +16,10 @@ Four object detection architectures are evaluated on a multi-site Antarctic data
 
 | Model | Type | Best mAP@0.5 | Count Error |
 |---|---|---|---|
-| BirdDetector | Zero-shot RetinaNet baseline | 0.07 (uk_test) | −3.6% to +77.4% |
-| YOLOv11 (augmented) | CNN one-stage | 0.834 (uk_test) | **−2.0%** |
-| RT-DETR | Transformer | 0.810 (uk_test) | +14.8% |
-| RF-DETR | Transformer | **0.942** (uk_test) | +9.8% |
+| BirdDetector | Zero-shot RetinaNet baseline | 7% (uk_test) | −3.6% to +77.4% |
+| YOLOv11 (augmented) | CNN one-stage | 83.4% (uk_test) | **−2.0%** |
+| RT-DETR | Transformer | 81% (uk_test) | +14.8% |
+| RF-DETR | Transformer | **94.57%** (uk_test) | +9.8% |
 
 The two best-performing models — `YOLO_augmentation` (most accurate counting) and `RF-DETR` (highest detection sensitivity) — are integrated into a deployable Streamlit web application.
 
@@ -132,7 +132,7 @@ Annotations were created in Label Studio and iteratively refined through three r
 
 ### Detection performance
 
-`RF-DETR` (baseline) achieves the highest mAP@0.5 of 0.942 on the test set, but consistently overestimates colony size (+9.8% count error), making it more suitable for high-sensitivity detection than precise counting.
+`RF-DETR` (baseline) achieves the highest mAP@0.5 of 94.57% on the test set, but consistently overestimates colony size (+9.8% count error), making it more suitable for high-sensitivity detection than precise counting.
 
 ### Out-of-distribution generalization
 

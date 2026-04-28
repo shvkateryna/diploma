@@ -3,7 +3,7 @@
 Bachelor thesis project — Ukrainian Catholic University, 2026
 
 **Author:** Kateryna Shvahuliak  
-**Supervisors:** Ph.D. Taras Firman, Svitozar Davydenko  
+**Supervisors:** Ph.D. Taras Firman, Ph.D. Svitozar Davydenko  
 **Department:** Computer Sciences and Information Technologies, Faculty of Applied Sciences
 
 ---

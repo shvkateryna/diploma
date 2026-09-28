@@ -9,30 +9,14 @@ RUN apt-get update && apt-get install -y \
 
 RUN pip install --upgrade pip
 
+# CPU-only torch first, so the pinned versions in requirements.txt
+# are already satisfied and pip doesn't pull the CUDA build
 RUN pip install --no-cache-dir \
-    torch==2.2.0 torchvision==0.17.0 \
+    torch==2.5.1 torchvision==0.20.1 \
     --index-url https://download.pytorch.org/whl/cpu
 
-RUN pip install --no-cache-dir \
-    ultralytics \
-    sahi \
-    tqdm \
-    pyyaml \
-    shapely \
-    pycocotools \
-    rasterio \
-    opencv-python-headless \
-    pillow \
-    "numpy<2.0"
-
-RUN pip install --no-cache-dir \
-    rfdetr==1.6.5 \
-    transformers>=5.0.0
-
-RUN pip install --no-cache-dir \
-    "streamlit==1.40.0" \
-    opencv-python-headless \
-    pillow
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

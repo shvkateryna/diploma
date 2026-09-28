@@ -11,3 +11,10 @@ yolo11n.pt
 yolo26n.pt
 app/models/rfdetr.pth
 app/models/yolo_aug.pt
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

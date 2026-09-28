@@ -25,7 +25,7 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Bundle a relocatable Python 3.10
         run: |
@@ -88,7 +88,7 @@ jobs:
           7z a -tzip -mx=5 PenguinDetector-windows.zip PenguinDetector | Out-Null
           "{0:N0} MB" -f ((Get-Item PenguinDetector-windows.zip).Length / 1MB)
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: PenguinDetector-windows
           path: PenguinDetector-windows.zip

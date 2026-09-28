@@ -5,6 +5,12 @@ name: Windows package
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "packaging/windows/**"
+      - ".github/workflows/windows-package.yml"
 
 jobs:
   build:

@@ -1,0 +1,90 @@
+# Builds the portable Windows package of Penguin Detector (no installation needed).
+# Model weights are not in the repo, so the resulting zip ships without them;
+# they are added to app/models/ afterwards.
+name: Windows package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PKG: ${{ github.workspace }}\PenguinDetector
+      PY: ${{ github.workspace }}\PenguinDetector\python\python.exe
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bundle a relocatable Python 3.10
+        run: |
+          irm https://astral.sh/uv/install.ps1 | iex
+          $env:Path = "$env:USERPROFILE\.local\bin;$env:Path"
+          uv python install 3.10 --install-dir "$env:RUNNER_TEMP\py"
+          $src = Get-ChildItem "$env:RUNNER_TEMP\py" -Directory -Filter "cpython-3.10*" | Select-Object -First 1
+          New-Item -ItemType Directory -Force $env:PKG | Out-Null
+          Move-Item $src.FullName "$env:PKG\python"
+          Remove-Item "$env:PKG\python\Lib\EXTERNALLY-MANAGED" -ErrorAction SilentlyContinue
+          & $env:PY --version
+          & $env:PY -m ensurepip --upgrade
+          & $env:PY -m pip install --upgrade pip
+
+      - name: Install libraries
+        run: |
+          & $env:PY -m pip install --no-cache-dir --no-warn-script-location torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+          if ($LASTEXITCODE) { exit 1 }
+          & $env:PY -m pip install --no-cache-dir --no-warn-script-location -r app/requirements.txt
+          if ($LASTEXITCODE) { exit 1 }
+          & $env:PY -m pip check
+
+      - name: Bundle the Visual C++ runtime (torch needs it; not every PC has it)
+        run: |
+          foreach ($dll in "vcruntime140.dll","vcruntime140_1.dll","msvcp140.dll","msvcp140_1.dll","msvcp140_2.dll","concrt140.dll","vcomp140.dll") {
+            $p = "C:\Windows\System32\$dll"
+            if (Test-Path $p) { Copy-Item $p "$env:PKG\python\" -Force; "bundled $dll" }
+          }
+
+      - name: Copy the app and launcher
+        run: |
+          robocopy app "$env:PKG\app" /E /XD __pycache__ /XF Dockerfile docker-compose.yml .DS_Store *.pt *.pth
+          if ($LASTEXITCODE -ge 8) { exit 1 }
+          Copy-Item packaging\windows\launcher.py, packaging\windows\START.bat $env:PKG
+          exit 0
+
+      - name: Smoke test from a folder with Cyrillic letters and spaces
+        run: |
+          $test = "C:\Тест Користувач\Робочий стіл"
+          New-Item -ItemType Directory -Force "$test\Temp" | Out-Null
+          robocopy $env:PKG "$test\PenguinDetector" /E /NFL /NDL /NJH /NJS | Out-Null
+          $py = "$test\PenguinDetector\python\python.exe"
+          $models = "$test\PenguinDetector\app\models"
+          # Placeholder weights of the same model types (the real ones are not in the repo)
+          Invoke-WebRequest https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt -OutFile "$models\yolo_aug.pt"
+          Push-Location $models
+          & $py -c "from rfdetr import RFDETRMedium; RFDETRMedium()"
+          Pop-Location
+          $pth = Get-ChildItem $models -Filter "rf-detr-medium*.pth" -Recurse | Select-Object -First 1
+          if (-not $pth) { Get-ChildItem -Recurse $models; throw "RF-DETR weights were not downloaded" }
+          Move-Item $pth.FullName "$models\rfdetr.pth" -Force
+          $env:TEMP = "$test\Temp"; $env:TMP = "$test\Temp"
+          $env:PYTHONUTF8 = "1"
+          & $py packaging\windows\smoke_test.py "$test\PenguinDetector"
+          if ($LASTEXITCODE) { exit 1 }
+
+      - name: Zip the package
+        run: |
+          Get-ChildItem $env:PKG -Recurse -Directory -Filter __pycache__ | Where-Object { $_.FullName -like "*\app\*" } | Remove-Item -Recurse -Force
+          7z a -tzip -mx=5 PenguinDetector-windows.zip PenguinDetector | Out-Null
+          "{0:N0} MB" -f ((Get-Item PenguinDetector-windows.zip).Length / 1MB)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PenguinDetector-windows
+          path: PenguinDetector-windows.zip
+          compression-level: 0
+          retention-days: 14

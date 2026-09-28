@@ -1,0 +1,12 @@
+[server]
+maxUploadSize = 5000   # MB — allows files up to 5 GB
+
+[browser]
+gatherUsageStats = false   # the app is used offline; don't try to send telemetry
+
+[theme]
+primaryColor           = "#0096c7"
+backgroundColor        = "#f0f7fc"
+secondaryBackgroundColor = "#ddeef8"
+textColor              = "#0a2540"
+font                   = "sans serif"

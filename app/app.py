@@ -1,10 +1,13 @@
 import os
 import random
+import shutil
 import tempfile
 import time
+import traceback
 
 import numpy as np
 import rasterio
+import rasterio.errors
 import streamlit as st
 from rasterio.enums import Resampling
 
@@ -41,6 +44,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+for key, default in (("results", None), ("job", None), ("error", None), ("upload_id", None)):
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+# While a detection is running, every widget is disabled: in Streamlit any widget
+# change reruns the script, which would silently abort a long detection.
+busy = st.session_state.job is not None
+
 # Sidebar
 with st.sidebar:
     st.markdown("### ⚙️ Settings")
@@ -51,117 +62,152 @@ with st.sidebar:
         "Model",
         options=list(model_options.keys()),
         format_func=lambda k: model_options[k],
+        disabled=busy,
     )
-    conf = st.slider("Confidence threshold", 0.10, 1.0, 0.25, 0.05)
+    conf = st.slider("Confidence threshold", 0.10, 1.0, 0.25, 0.05, disabled=busy)
 
 # Upload
 uploaded = st.file_uploader(
     "Aerial image",
     type=["jpg", "jpeg", "png", "tif", "tiff"],
+    disabled=busy,
 )
 
-if "results" not in st.session_state:
-    st.session_state.results = None
+# A new image makes the previous results meaningless
+if uploaded is not None and not busy:
+    upload_id = (uploaded.name, uploaded.size)
+    if upload_id != st.session_state.upload_id:
+        st.session_state.upload_id = upload_id
+        st.session_state.results = None
+        st.session_state.error = None
 
-if uploaded:
+if uploaded and not busy:
     st.divider()
     if st.button("🔍 Detect Penguins", type="primary", use_container_width=True):
+        # Save the upload to disk first, so the job no longer depends on the widget
+        ext = os.path.splitext(uploaded.name)[1] or ".tif"
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
+            uploaded.seek(0)
+            shutil.copyfileobj(uploaded, f, length=16 * 1024 * 1024)
+        st.session_state.job = {
+            "path": f.name,
+            "name": uploaded.name,
+            "model": model_name,
+            "conf": conf,
+        }
         st.session_state.results = None
-        cfg = get_pipeline_cfg()
-        progress = st.progress(0, text="Initialising…")
-        tmp_src = None
+        st.session_state.error = None
+        st.rerun()
 
-        try:
-            progress.progress(5, text="Loading model…")
-            model = get_model(model_name)
+if busy:
+    job = st.session_state.job
+    tmp_src = job["path"]
+    cfg = get_pipeline_cfg()
+    st.divider()
+    st.info("Detection is running. Please keep this page open until it finishes.")
+    progress = st.progress(0, text="Initialising…")
 
-            progress.progress(10, text="Reading image…")
-            ext = os.path.splitext(uploaded.name)[1] or ".tif"
-            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as f:
-                f.write(uploaded.read())
-                tmp_src = f.name
+    try:
+        progress.progress(5, text="Loading model…")
+        model = get_model(job["model"])
 
-            with rasterio.open(tmp_src) as src:
-                h, w = src.height, src.width
+        progress.progress(10, text="Reading image…")
+        with rasterio.open(tmp_src) as src:
+            h, w = src.height, src.width
 
-            mpx = w * h / 1_000_000
-            if mpx > 500:
-                st.info(
-                    f"Large image: {w} × {h} px ({mpx:.0f} MP). "
-                    "Tiles are read from disk — RAM usage stays low."
-                )
+        t_start = time.perf_counter()
 
-            def on_tile(done: int, total: int) -> None:
-                pct = 10 + int(done / total * 75)
-                progress.progress(pct, text=f"Tile {done} / {total}")
+        def on_tile(done: int, total: int) -> None:
+            pct = 10 + int(done / total * 75)
+            elapsed = time.perf_counter() - t_start
+            left = elapsed / done * (total - done)
+            eta = f"~{left / 60:.0f} min left" if left >= 90 else f"~{left:.0f} s left"
+            progress.progress(pct, text=f"Tile {done} / {total} · {eta}")
 
-            t_start = time.perf_counter()
-            raw_boxes, raw_scores = run_inference(
-                tmp_src, model, conf,
-                cfg["tile_size"], cfg["overlap"],
-                on_tile=on_tile,
-                batch_size=cfg.get("batch_size", 4),
+        raw_boxes, raw_scores = run_inference(
+            tmp_src, model, job["conf"],
+            cfg["tile_size"], cfg["overlap"],
+            on_tile=on_tile,
+            batch_size=cfg.get("batch_size", 4),
+        )
+
+        progress.progress(88, text="Aggregating predictions (NMS)…")
+        boxes, scores = apply_nms(raw_boxes, raw_scores, cfg["iou_threshold"])
+        elapsed_sec = time.perf_counter() - t_start
+
+        progress.progress(95, text="Drawing results…")
+        scale = min(1.0, 2000 / max(h, w))
+        out_h = max(1, int(h * scale))
+        out_w = max(1, int(w * scale))
+        with rasterio.open(tmp_src) as src:
+            n_bands = min(3, src.count)
+            indexes = list(range(1, n_bands + 1))  # rasterio bands are 1-indexed
+            data = src.read(
+                indexes=indexes,
+                out_shape=(n_bands, out_h, out_w),
+                resampling=Resampling.lanczos,
             )
-
-            progress.progress(88, text="Aggregating predictions (NMS)…")
-            boxes, scores = apply_nms(raw_boxes, raw_scores, cfg["iou_threshold"])
-            elapsed_sec = time.perf_counter() - t_start
-
-            progress.progress(95, text="Drawing results…")
-            scale = min(1.0, 2000 / max(h, w))
-            out_h = max(1, int(h * scale))
-            out_w = max(1, int(w * scale))
-            with rasterio.open(tmp_src) as src:
-                n_bands = min(3, src.count)
-                indexes = list(range(1, n_bands + 1))  # rasterio bands are 1-indexed
-                data = src.read(
-                    indexes=indexes,
-                    out_shape=(n_bands, out_h, out_w),
-                    resampling=Resampling.lanczos,
+            if n_bands < 3:
+                data = np.repeat(data[:1], 3, axis=0)
+            original_display = np.moveaxis(data[:3], 0, -1)
+            if original_display.dtype != np.uint8:
+                mx = (
+                    np.iinfo(original_display.dtype).max
+                    if np.issubdtype(original_display.dtype, np.integer)
+                    else float(original_display.max()) or 1.0
                 )
-                if n_bands < 3:
-                    data = np.repeat(data[:1], 3, axis=0)
-                original_display = np.moveaxis(data[:3], 0, -1)
-                if original_display.dtype != np.uint8:
-                    mx = (
-                        np.iinfo(original_display.dtype).max
-                        if np.issubdtype(original_display.dtype, np.integer)
-                        else float(original_display.max()) or 1.0
-                    )
-                    original_display = (
-                        original_display.astype(np.float32) / mx * 255
-                    ).clip(0, 255).astype(np.uint8)
+                original_display = (
+                    original_display.astype(np.float32) / mx * 255
+                ).clip(0, 255).astype(np.uint8)
 
-            display_boxes = [
-                (int(x1 * scale), int(y1 * scale), int(x2 * scale), int(y2 * scale))
-                for x1, y1, x2, y2 in boxes
-            ]
-            result_display = draw_boxes(original_display, display_boxes, scores)
+        progress.progress(100, text="Done!")
 
-            progress.progress(100, text="Done!")
+        st.session_state.results = {
+            "original": original_display,
+            "boxes": boxes,
+            "scores": scores,
+            "scale": scale,
+            "image_shape": (h, w),
+            "image_name": job["name"],
+            "elapsed_sec": elapsed_sec,
+            "inference_conf": job["conf"],
+        }
 
-            st.session_state.results = {
-                "original": original_display,
-                "boxes": boxes,
-                "scores": scores,
-                "scale": scale,
-                "image_shape": (h, w),
-                "image_name": uploaded.name,
-                "elapsed_sec": elapsed_sec,
-                "inference_conf": conf,
-            }
-
-        except FileNotFoundError as e:
-            progress.empty()
-            st.error(str(e))
-        except MemoryError:
-            progress.empty()
-            st.error(
-                "Not enough RAM. Try increasing the Docker memory limit."
-            )
-        finally:
-            if tmp_src and os.path.exists(tmp_src):
+    except MemoryError:
+        st.session_state.error = (
+            "Not enough memory (RAM) to process this image. "
+            "Close other programs and try again.",
+            None,
+        )
+    except rasterio.errors.RasterioIOError as e:
+        st.session_state.error = (
+            "Could not read this image. The file may be damaged or in an "
+            "unsupported format. Supported: JPG, PNG, TIFF.",
+            str(e),
+        )
+    except Exception:
+        st.session_state.error = (
+            "Something went wrong during detection. Please try again; if it "
+            "keeps happening, send the details below to the developer.",
+            traceback.format_exc(),
+        )
+    finally:
+        st.session_state.job = None
+        if os.path.exists(tmp_src):
+            try:
                 os.unlink(tmp_src)
+            except OSError:
+                pass  # Windows may still hold the file; it lives in the temp folder anyway
+
+    # Rerun so the widgets are enabled again and results/errors are shown
+    st.rerun()
+
+if st.session_state.error:
+    message, details = st.session_state.error
+    st.error(message)
+    if details:
+        with st.expander("Technical details"):
+            st.code(details, language=None)
 
 # Results
 if st.session_state.results:

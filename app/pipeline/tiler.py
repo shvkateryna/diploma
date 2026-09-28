@@ -40,8 +40,12 @@ def _prepare_source(path: str) -> tuple[str, bool]:
             blockxsize=512,
             blockysize=512,
             interleave='band',
-            photometric='rgb',
         )
+        # RGB photometric is only valid for 3+ band images (fails on greyscale)
+        if src.count >= 3:
+            profile['photometric'] = 'rgb'
+        else:
+            profile.pop('photometric', None)
         with rasterio.open(tmp.name, 'w', **profile) as dst:
             for _, window in src.block_windows(1):
                 dst.write(src.read(window=window), window=window)

@@ -4,9 +4,13 @@ import numpy as np
 import yaml
 from PIL import Image
 
+# Resolve paths relative to the app folder, not the current working directory,
+# so the app works no matter where it was launched from.
+APP_DIR = Path(__file__).resolve().parent.parent
+
 
 def load_config() -> dict:
-    with open("config.yaml") as f:
+    with open(APP_DIR / "config.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -28,7 +32,9 @@ class YOLOModel:
     def predict_batch(
         self, tiles: list[np.ndarray], conf: float
     ) -> list[tuple[list[tuple[int, int, int, int]], list[float]]]:
-        results = self.model.predict(tiles, conf=conf, verbose=False)
+        # Ultralytics treats numpy input as BGR (OpenCV convention); tiles are RGB
+        bgr = [np.ascontiguousarray(t[..., ::-1]) for t in tiles]
+        results = self.model.predict(bgr, conf=conf, verbose=False)
         output = []
         for r in results:
             b, s = [], []
@@ -69,7 +75,7 @@ class RFDETRModel:
 def load(name: str) -> YOLOModel | RFDETRModel:
     cfg = load_config()
     info = cfg["models"][name]
-    path = info["path"]
+    path = str(APP_DIR / info["path"])
 
     if not Path(path).exists():
         raise FileNotFoundError(f"Weights not found: {path}")

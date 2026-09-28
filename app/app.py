@@ -22,12 +22,12 @@ from utils.exporter import to_label_studio_json, to_roi_zip
 from utils.visualizer import draw_boxes, to_bytes
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def get_model(name: str):
     return load(name)
 
 
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def get_pipeline_cfg() -> dict:
     return load_config()["pipeline"]
 

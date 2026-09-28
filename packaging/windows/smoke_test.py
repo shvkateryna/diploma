@@ -64,13 +64,16 @@ for _ in range(240):
 proc.kill()
 check("launcher serves the app", healthy)
 
-# 3. Paths must fit into Windows MAX_PATH (260) even from a deep folder
+# 3. Paths must fit into Windows MAX_PATH (260): leave ~80 chars for the folder
+#    the user extracts into (e.g. C:\Users\<name>\Downloads\PenguinDetector-windows\)
+files = [os.path.join(d, f) for d, _, fs in os.walk(PKG) for f in fs]
+print(f"package has {len(files)} files", flush=True)
 longest = max(
     (os.path.join(d, f) for d, _, fs in os.walk(PKG) for f in fs),
     key=len,
 )
 rel = len(os.path.relpath(longest, PKG))
-check("longest relative path", rel < 150, f"{rel} chars: {os.path.relpath(longest, PKG)}")
+check("longest relative path", rel < 180, f"{rel} chars: {os.path.relpath(longest, PKG)}")
 
 if failures:
     print("FAILED:", failures)

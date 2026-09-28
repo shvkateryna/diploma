@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>Penguin Detector — інструкція</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  :root { --ink: #0a2540; --muted: #4b5f75; --accent: #0077a8; --soft: #eaf4fa; --warn: #fff4e0; --warn-ink: #7a4b00; --line: #d5e3ee; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink); font-size: 11.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4pt; }
+  h2 { font-size: 15pt; margin: 20pt 0 8pt; padding-top: 4pt; border-top: 2px solid var(--line); break-after: avoid; }
+  h2 .n { display: inline-block; width: 22pt; height: 22pt; line-height: 22pt; border-radius: 50%; background: var(--accent); color: #fff; text-align: center; font-size: 12pt; margin-right: 6pt; }
+  p { margin: 0 0 7pt; }
+  .lead { color: var(--muted); font-size: 12.5pt; margin-bottom: 12pt; }
+  ol, ul { margin: 0 0 8pt; padding-left: 20pt; }
+  li { margin-bottom: 5pt; }
+  b, strong { font-weight: 650; }
+  .ui { font-weight: 650; background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+  .path { font-family: Consolas, "Courier New", monospace; background: var(--soft); padding: 0 4px; border-radius: 3px; white-space: nowrap; }
+  .box { border-radius: 6px; padding: 8pt 11pt; margin: 8pt 0 10pt; break-inside: avoid; }
+  .tip { background: var(--soft); border-left: 4px solid var(--accent); }
+  .warn { background: var(--warn); border-left: 4px solid #e09a1a; color: var(--warn-ink); }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 6px; display: block; }
+  figure.narrow img { width: 38%; }
+  figcaption { color: var(--muted); font-size: 10pt; margin-top: 4pt; }
+  .console { background: #0c0c0c; color: #e6e6e6; font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; line-height: 1.45; padding: 10pt 12pt; border-radius: 6px; white-space: pre; break-inside: avoid; margin: 8pt 0 10pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 10.5pt; }
+  th, td { text-align: left; vertical-align: top; padding: 6pt 8pt; border-bottom: 1px solid var(--line); }
+  th { background: var(--soft); font-weight: 650; }
+  tr { break-inside: avoid; }
+  .req { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 6pt 0 4pt; }
+  .req div { background: var(--soft); border-radius: 6px; padding: 7pt 9pt; font-size: 10pt; color: var(--muted); }
+  .req b { display: block; color: var(--ink); font-size: 12pt; }
+  .page-break { break-before: page; }
+</style>
+</head>
+<body>
+
+<h1>🐧 Penguin Detector</h1>
+<p class="lead">Інструкція для підрахунку пінгвінів на аерофотознімках. Програма працює на вашому комп'ютері без інтернету: знімки нікуди не надсилаються.</p>
+
+<div class="req">
+  <div><b>Windows 10 або 11</b>64-бітна</div>
+  <div><b>16 GB пам'яті</b>мінімум 8 GB</div>
+  <div><b>6 GB на диску</b>вільного місця</div>
+  <div><b>Без інтернету</b>не потрібен</div>
+</div>
+
+<h2><span class="n">1</span>Перший раз: розпакувати програму</h2>
+<p>Це потрібно зробити <b>лише один раз</b>. Далі програма просто запускається (крок 2).</p>
+<ol>
+  <li>Скопіюйте файл <span class="path">PenguinDetector-windows.zip</span> на комп'ютер (з флешки або завантажте).</li>
+  <li>Клацніть по файлу <b>правою</b> кнопкою миші → <span class="ui">Властивості</span>. Внизу вікна поставте галочку <span class="ui">Розблокувати</span> → <span class="ui">OK</span>.<br>
+      <small>Якщо такої галочки немає — нічого страшного, переходьте далі.</small></li>
+  <li>Знову клацніть <b>правою</b> кнопкою по файлу → <span class="ui">Видобути все…</span></li>
+  <li>У полі шляху зітріть те, що там написано, і впишіть <span class="path">C:\</span> → <span class="ui">Видобути</span>.<br>
+      З'явиться папка <span class="path">C:\PenguinDetector</span>.</li>
+</ol>
+<div class="box tip">
+  <p>⏳ Розпакування триває <b>5–15 хвилин</b> — у програмі багато файлів. Дочекайтеся, поки вікно копіювання зникне.</p>
+</div>
+<div class="box warn">
+  <p>Розпаковуйте саме в <span class="path">C:\</span>, а не в «Завантаження» чи на робочий стіл: у Windows є обмеження на довжину шляху до файлів, і з глибоких папок програма може не запуститися.</p>
+</div>
+
+<h2><span class="n">2</span>Запуск програми</h2>
+<ol>
+  <li>Відкрийте папку <span class="path">C:\PenguinDetector</span>.</li>
+  <li>Двічі клацніть файл <span class="path">START.bat</span> (може показуватися просто як <span class="path">START</span>).</li>
+  <li>Якщо з'явиться синє вікно <b>«Windows захистив ваш комп'ютер»</b> — натисніть <span class="ui">Докладніше</span> → <span class="ui">Усе одно запустити</span>. Це стандартне попередження для програм, завантажених не з магазину Microsoft.</li>
+  <li>Відкриється <b>чорне вікно</b>. Приблизно через 30–60 секунд у браузері сама відкриється програма.</li>
+</ol>
+<div class="console">Запуск Penguin Detector... Зачекайте, будь ласка (до хвилини).
+
+============================================================
+  Penguin Detector працює.
+  Якщо браузер не відкрився сам, відкрийте адресу: http://localhost:8501
+
+  НЕ ЗАКРИВАЙТЕ це вікно, поки працюєте з програмою.
+  Щоб завершити роботу, просто закрийте це вікно.
+============================================================</div>
+<div class="box warn">
+  <p><b>Не закривайте чорне вікно</b>, поки користуєтеся програмою — це і є сама програма. Браузер лише показує її.</p>
+</div>
+<div class="box tip">
+  <p>💡 <b>Ярлик на робочий стіл:</b> клацніть правою кнопкою по <span class="path">START.bat</span> → <span class="ui">Показати додаткові параметри</span> → <span class="ui">Надіслати</span> → <span class="ui">Робочий стіл (створити ярлик)</span>. Далі запускайте програму з робочого столу.</p>
+</div>
+
+<h2><span class="n">3</span>Підрахунок пінгвінів</h2>
+<ol>
+  <li>Натисніть <span class="ui">Browse files</span> і виберіть знімок — або просто перетягніть файл у це поле.<br>
+      Підходять формати <b>JPG, PNG, TIFF</b> (зокрема ортомозаїки GeoTIFF), розміром до 5 GB.</li>
+  <li>Натисніть синю кнопку <span class="ui">🔍 Detect Penguins</span>.</li>
+</ol>
+<figure>
+  <img src="img/upload.jpg" alt="Знімок завантажено, кнопка Detect Penguins">
+  <figcaption>Знімок завантажено — натисніть «Detect Penguins».</figcaption>
+</figure>
+
+<p>Почнеться обробка. Знімок розрізається на частини («тайли»), і програма перевіряє кожну. Над смужкою видно, скільки частин оброблено і скільки часу залишилось.</p>
+<figure>
+  <img src="img/progress.jpg" alt="Смужка прогресу під час обробки">
+  <figcaption>Tile 4 / 35 — оброблено 4 частини з 35; ~21 s left — залишилося близько 21 секунди.</figcaption>
+</figure>
+<div class="box warn">
+  <p>Поки йде обробка, <b>не закривайте сторінку і не натискайте нічого на ній</b> (зокрема хрестик біля назви файлу) — інакше обробку доведеться починати спочатку.</p>
+</div>
+<table>
+  <tr><th>Знімок</th><th>Скільки чекати (приблизно)</th></tr>
+  <tr><td>Одне фото з дрона (20 мегапікселів)</td><td>до 1 хвилини</td></tr>
+  <tr><td>Велика ортомозаїка (200–400 мегапікселів)</td><td>10–30 хвилин</td></tr>
+</table>
+<p>З моделлю RF-DETR обробка зазвичай у кілька разів довша. Можна тим часом займатися іншими справами — просто не закривайте браузер і чорне вікно.</p>
+
+<h2><span class="n">4</span>Налаштування (зліва)</h2>
+<figure class="narrow">
+  <img src="img/settings.jpg" alt="Панель налаштувань">
+</figure>
+<table>
+  <tr><th style="width:30%">Налаштування</th><th>Що означає</th></tr>
+  <tr><td><b>Model</b><br>(модель)</td><td>
+    <b>YOLOv11 — Augmented</b> — рекомендована: найточніша загальна кількість, працює швидко.<br>
+    <b>RF-DETR — Baseline</b> — знаходить майже всіх пінгвінів, але частіше помилково позначає камені чи тіні. Повільніша.</td></tr>
+  <tr><td><b>Confidence threshold</b><br>(поріг впевненості)</td><td>
+    Наскільки модель має бути впевнена, щоб порахувати об'єкт пінгвіном. За замовчуванням <b>0.25</b> — залиште так.<br>
+    Більше значення → менше помилкових позначок, але частину пінгвінів можна пропустити.</td></tr>
+</table>
+<p>Після обробки повзунок можна рухати вправо — результат оновиться одразу, без повторної обробки. Щоб побачити результат з <i>меншим</i> порогом, ніж був під час обробки, натисніть <span class="ui">Detect Penguins</span> ще раз.</p>
+
+<h2><span class="n">5</span>Результат</h2>
+<figure>
+  <img src="img/results.jpg" alt="Результат підрахунку">
+  <figcaption>Угорі — кількість знайдених пінгвінів. Зліва — оригінальний знімок, справа — знайдені пінгвіни в червоних рамках. Внизу — кнопки збереження.</figcaption>
+</figure>
+<table>
+  <tr><th style="width:30%">Поле</th><th>Що означає</th></tr>
+  <tr><td><b>Penguins detected</b></td><td>Кількість знайдених пінгвінів — головний результат.</td></tr>
+  <tr><td><b>Avg / Max confidence</b></td><td>Середня й найвища впевненість моделі (у відсотках).</td></tr>
+  <tr><td><b>Processing time</b></td><td>Скільки тривала обробка.</td></tr>
+</table>
+<div class="box tip">
+  <p>Модель може помилятися: пропустити пінгвіна, якого закриває інший, або сплутати пінгвіна з каменем. Для точного підрахунку перевірте результат у Fiji / ImageJ (крок 6).</p>
+</div>
+
+<h2><span class="n">6</span>Збереження результатів</h2>
+<p>Під зображеннями є три кнопки (<b>Export results</b>). Файли зберігаються в папку <span class="path">Завантаження</span> (Downloads).</p>
+<table>
+  <tr><th style="width:30%">Кнопка</th><th>Що зберігає</th></tr>
+  <tr><td><b>RoiSet.zip — ImageJ</b></td><td>Рамки всіх пінгвінів для <b>Fiji / ImageJ</b>, де їх можна перевірити й виправити вручну.<br>
+      У Fiji: відкрийте знімок → <span class="ui">Analyze</span> → <span class="ui">Tools</span> → <span class="ui">ROI Manager</span> → <span class="ui">More</span> → <span class="ui">Open…</span> → виберіть RoiSet.zip.</td></tr>
+  <tr><td><b>Image (PNG)</b></td><td>Картинка зі знайденими пінгвінами (зменшена копія знімка) — для звіту чи швидкого перегляду.</td></tr>
+  <tr><td><b>Label Studio JSON</b></td><td>Розмітка для програми Label Studio (<span class="ui">Tasks</span> → <span class="ui">Import</span>). Потрібна, лише якщо ви з нею працюєте.</td></tr>
+</table>
+<div class="box warn">
+  <p>Збережіть потрібні файли <b>до</b> того, як завантажите наступний знімок або закриєте програму: результати не зберігаються автоматично.</p>
+</div>
+
+<h2><span class="n">7</span>Завершення роботи</h2>
+<p>Закрийте вкладку браузера і <b>чорне вікно</b>. Наступного разу — знову двічі клацніть <span class="path">START.bat</span> (крок 2).</p>
+
+<h2><span class="n">?</span>Якщо щось пішло не так</h2>
+<table>
+  <tr><th style="width:38%">Що сталося</th><th>Що зробити</th></tr>
+  <tr><td>Під час розпакування: «Шлях задовгий» або помилка копіювання</td><td>Видаліть наполовину розпаковану папку і розпакуйте знову саме в <span class="path">C:\</span> (крок 1).</td></tr>
+  <tr><td>Браузер не відкрився сам</td><td>Відкрийте будь-який браузер (Edge, Chrome) і введіть адресу, яку показує чорне вікно, — зазвичай <span class="path">http://localhost:8501</span>.</td></tr>
+  <tr><td>У браузері «Не вдається отримати доступ до сайту»</td><td>Чорне вікно закрите — програма не працює. Запустіть <span class="path">START.bat</span> ще раз.</td></tr>
+  <tr><td>Чорне вікно одразу закривається або в ньому текст помилки</td><td>Сфотографуйте вікно телефоном і надішліть розробниці (контакт нижче).</td></tr>
+  <tr><td>Червоне повідомлення <b>Not enough memory</b></td><td>Закрийте інші програми (особливо зайві вкладки браузера), закрийте й знову запустіть Penguin Detector. Якщо не допомогло — знімок завеликий для цього комп'ютера.</td></tr>
+  <tr><td>Червоне повідомлення <b>Could not read this image</b></td><td>Файл пошкоджений або в іншому форматі. Перевірте, що він відкривається на комп'ютері, або збережіть його як JPG чи TIFF.</td></tr>
+  <tr><td>Червоне повідомлення <b>Something went wrong</b></td><td>Спробуйте ще раз. Якщо повторюється — натисніть <span class="ui">Technical details</span>, скопіюйте текст і надішліть розробниці.</td></tr>
+  <tr><td>Обробка дуже довга</td><td>Для великих ортомозаїк це нормально (до 30 хв, з RF-DETR — довше). Якщо смужка не рухається понад 10 хвилин — закрийте чорне вікно й запустіть знову.</td></tr>
+  <tr><td>Знайдено 0 пінгвінів, хоча вони є</td><td>Спробуйте менший поріг (0.15) або модель RF-DETR і натисніть <span class="ui">Detect Penguins</span> знову.</td></tr>
+</table>
+
+<div class="box tip">
+  <p><b>Зв'язок з розробницею:</b> Катерина Швагуляк</p>
+  <p>Коли пишете про проблему, додайте, якщо можна: фото екрана, яку модель обрали, і розмір знімка.</p>
+</div>
+
+</body>
+</html>

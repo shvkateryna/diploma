@@ -38,20 +38,24 @@ def to_label_studio_json(
     return json.dumps(task, indent=2).encode("utf-8")
 
 
-_MAGIC   = b'Iroi'
+# ImageJ ROI binary format (ij/io/RoiDecoder.java)
+_MAGIC   = b'Iout'  # ImageJ rejects anything else: "This is not an ImageJ ROI"
 _VERSION = 228
 _RECT    = 1
+_SUB_PIXEL_RESOLUTION = 128  # options flag: read float bounds at XD..HEIGHTD
+_SHORT_MAX = 32767           # integer bounds are signed 16-bit
 
 
 def _rect_roi(x1: int, y1: int, x2: int, y2: int) -> bytes:
     h = bytearray(64)
     h[0:4] = _MAGIC
-    struct.pack_into('>H', h, 4,  _VERSION)
+    struct.pack_into('>h', h, 4,  _VERSION)
     h[6] = _RECT
-    struct.pack_into('>H', h, 8,  min(65535, max(0, y1)))
-    struct.pack_into('>H', h, 10, min(65535, max(0, x1)))
-    struct.pack_into('>H', h, 12, min(65535, max(0, y2)))
-    struct.pack_into('>H', h, 14, min(65535, max(0, x2)))
+    # Integer bounds (top, left, bottom, right) only fit images up to 32767 px;
+    # the float bounds below carry the exact values for larger orthomosaics.
+    struct.pack_into('>hhhh', h, 8, *(min(_SHORT_MAX, max(0, v)) for v in (y1, x1, y2, x2)))
+    struct.pack_into('>ffff', h, 18, float(x1), float(y1), float(x2 - x1), float(y2 - y1))
+    struct.pack_into('>h', h, 50, _SUB_PIXEL_RESOLUTION)
     return bytes(h)
 
 

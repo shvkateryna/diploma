@@ -34,19 +34,28 @@ from streamlit.testing.v1 import AppTest  # noqa: E402
 
 rng = np.random.default_rng(0)
 img = Image.fromarray(rng.integers(0, 255, (2100, 3100, 3), dtype=np.uint8))
+CASES = [
+    (".jpg", {}),
+    (".tif", {}),
+    # 120 m flight: image is rescaled to the training resolution before detection
+    (".jpg", {"gsd_mode": "Flight altitude", "gsd_value": 120.0}),
+]
 for model in ("yolo_augmentation", "rfdetr_baseline"):
-    for ext in (".jpg", ".tif"):
+    for ext, gsd in CASES:
         tmp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
         tmp.close()
         img.save(tmp.name)
         at = AppTest.from_file(os.path.join(APP, "app.py"), default_timeout=900)
         at.run()
-        at.session_state["job"] = {"path": tmp.name, "name": "test" + ext, "model": model, "conf": 0.25}
+        at.session_state["job"] = {
+            "path": tmp.name, "name": "test" + ext, "model": model, "conf": 0.25, **gsd,
+        }
         t = time.time()
         at.run()
         res = at.session_state["results"] if "results" in at.session_state else None
         errors = [e.value for e in at.exception] + [e.value for e in at.error]
-        check(f"app flow {model} {ext}", res is not None and not errors,
+        label = f"app flow {model} {ext}" + (f" {gsd['gsd_value']:g}m" if gsd else "")
+        check(label, res is not None and not errors,
               f"({time.time() - t:.0f}s, errors={errors})")
 
 # 2. Launcher starts the server and it answers

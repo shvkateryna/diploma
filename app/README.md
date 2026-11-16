@@ -48,12 +48,25 @@ docker compose down
 
 1. **Select a model** in the left sidebar (YOLOv11 or RF-DETR).
 2. **Set the confidence threshold** — only detections above this score are shown.
-3. **Upload an aerial image** (JPEG, PNG, TIFF, GeoTIFF).
-4. Click **Detect Penguins**.
-5. Adjust the confidence slider after detection — the results update without re-running the model.
-6. Download results in your preferred format.
+3. **Set the image resolution** (see below).
+4. **Upload an aerial image** (JPEG, PNG, TIFF, GeoTIFF).
+5. Click **Detect Penguins**.
+6. Adjust the confidence slider after detection — the results update without re-running the model.
+7. Download results in your preferred format.
 
 > If you lower the slider below the threshold used during detection, a notice appears asking you to re-run with the new threshold.
+
+### Image resolution
+
+The models were trained on photos taken from 80–100 m (about 2.2 cm of ground per pixel). From higher up penguins look smaller in pixels and are missed, so the app rescales every image to the training resolution. Tell it the resolution in the sidebar:
+
+| Option | Use for |
+|---|---|
+| **Auto (GeoTIFF)** | Georeferenced GeoTIFF orthomosaics — the pixel size is read from the file. JPEG/PNG are processed at original scale. |
+| **Flight altitude** | Raw drone photos (DJI Phantom 4 Pro camera). 120 m → 3.3 cm/px → image enlarged ×1.5. |
+| **Pixel size** | Orthomosaics exported as JPEG/PNG: enter the pixel size chosen at export (Metashape: *Export Orthomosaic → Pixel size*). |
+
+The pixel size used and the rescale factor are shown above the results.
 
 ---
 
@@ -78,6 +91,7 @@ app/
 │   └── rfdetr.pth          # RF-DETR weights
 │
 ├── pipeline/
+│   ├── gsd.py              # Ground resolution from GeoTIFF metadata / altitude
 │   ├── tiler.py            # Splits images into overlapping tiles
 │   ├── inference.py        # Batch inference orchestration
 │   ├── nms.py              # Non-Maximum Suppression
@@ -134,10 +148,13 @@ models:
 - GeoTIFF images are streamed via rasterio windows (constant RAM regardless of file size).
 - JPEG/PNG images are first converted to a temporary GeoTIFF, then tiled the same way.
 - Each tile carries its `(x, y)` origin so detections can be mapped back to original coordinates.
+- With a `scale` ≠ 1 it reads a `tile_size / scale` window and resamples it to `tile_size`, so penguins appear at the training size.
+
+**`gsd.py`** — Ground sampling distance (cm/px): read from GeoTIFF georeferencing (projected or lat/lon CRS) or computed from flight altitude and camera.
 
 **`inference.py`** — Orchestrates tiling and model inference.
 - Tiles are accumulated into batches (default: 4) and flushed through the model.
-- Detected box coordinates are offset back to the full image coordinate system.
+- Detected box coordinates are scaled and offset back to the full image coordinate system.
 - Accepts an optional `on_tile` progress callback.
 
 **`nms.py`** — Standard greedy Non-Maximum Suppression.
@@ -149,7 +166,7 @@ models:
 ### `utils/`
 
 **`visualizer.py`**
-- `draw_boxes(image, boxes, scores)` — draws red bounding boxes with confidence labels onto an RGB array.
+- `draw_boxes(image, boxes, labels)` — draws thin red boxes with each penguin's number above it. Penguins are numbered top to bottom, left to right; the numbers match the ROI names in `RoiSet.zip` (`0001-penguin`, …).
 - `to_bytes(image)` — encodes a numpy array to PNG bytes for download.
 
 **`exporter.py`**
@@ -168,6 +185,15 @@ pipeline:
   overlap: 0.2          # fraction overlap between adjacent tiles
   iou_threshold: 0.5    # NMS IoU threshold
   batch_size: 4         # tiles per inference batch
+
+gsd:
+  reference_cm: 2.2     # GSD of the training tiles (Phantom 4 Pro, 80 m)
+  camera:               # converts "Flight altitude" to GSD
+    sensor_width_mm: 13.2
+    focal_length_mm: 8.8
+    image_width_px: 5472
+  min_scale: 0.25       # refuse rescaling outside this range
+  max_scale: 4.0
 ```
 
 ---

@@ -4,6 +4,20 @@ pipeline:
   iou_threshold: 0.5
   batch_size: 4
 
+# Ground sampling distance (cm of ground per pixel). Tiles are rescaled so that
+# every image is seen by the model at the GSD it was trained on.
+gsd:
+  # GSD of the training tiles: DJI Phantom 4 Pro at 80 m (Yalour, most of the data).
+  reference_cm: 2.2
+  # Camera used to convert "flight altitude" into GSD (DJI Phantom 4 Pro, FC6310S).
+  camera:
+    sensor_width_mm: 13.2
+    focal_length_mm: 8.8
+    image_width_px: 5472
+  # Rescaling outside this range is refused (almost certainly a wrong GSD input).
+  min_scale: 0.25
+  max_scale: 4.0
+
 models:
   yolo_augmentation:
     path: models/yolo_aug.pt
